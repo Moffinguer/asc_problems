@@ -1,0 +1,18 @@
+1) ( ZDT3 Multiobjetivo Agregación )
+		- 10⁴ evs
+		- 4 * 10³ evs
+	* Comparar con NSGAII
+	* Descomponer a 1 solo objetivo cada problema( una función objetivo por cada problema )
+	* i en [1,p=30]
+	* z_i^* = valor minimo de la función objetivo para ese problema( todo el espacio de búsqueda )[ el ideal ]
+	* lambda_i = el angulo de inclinación para la función objetivo( 0 -> 90º )
+	* N = numero subproblemas ( tamaño población )
+	* T = vecindad [10%-30%] ( recomendable pero no siempre así, no debe ser muy bajo ni muy alto, punto intermedio, e ir jugando )
+	* Espacio de búsqueda( Li y Ui )[ tramo superior e inferior ]
+	* G = num generaciones
+	* Parametros de control evolutivos
+	* Toda sum(lamda_i^j) = 1, para toda una i
+	* steps = 1/(N-1)
+	* Usar el ejemplo de NSGAII que hay implementado como guía para el algoritmo
+
+2) CF6 ( Multiobjetivo con Restricciones ) Ampliar solo cuando 1) esté funcionando
