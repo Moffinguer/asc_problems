@@ -1,0 +1,323 @@
+#!/usr/bin/env bash
+
+function print() # (message)
+{
+	local message=$1
+	length=${#message}
+
+	printf '%s\n' $(printf '#%.0s' $(seq 1 $((length+4))))
+	printf '# %s #\n' "$1"
+	printf '%s\n' $(printf '#%.0s' $(seq 1 $((length+4))))
+}
+
+
+function skip_files() # ($file, $file_type) => ($skip)
+{
+	for exception in "${exceptionfiles[@]}"; do
+		local matches_exception=$( echo "$2" | grep -i "$exception" )
+
+		if [[ $1 != $exception && ! $1 =~ \.$exception$ && -z $matches_exception ]]; then
+			continue
+		fi
+		echo ""
+		echo ">>>> Skip file $1"
+		echo ""
+		return 1
+	done
+	return 0
+}
+
+function java_files() #( $file, $enabled ) => ()
+{
+	if [[ $2 == 1 ]]; then
+		if [[ "$logfile" != "./target/java/java$localtime.log" ]]; then
+			which clang-format >> /dev/null
+			if [[ $? == 1 ]]; then
+				print "ClangFormat is not installed"
+				exit 1
+			fi
+			logfile="./target/java"
+
+			if [[ ! -d "$logfile" ]]
+			then
+				mkdir -p "$logfile"
+			fi
+
+			logfile="$logfile"/java"$localtime".log
+
+			if [[ ! -f "$logfile" ]]
+			then
+				touch "$logfile"
+			fi
+		fi
+
+		## Format
+		clang-format --style=file --fallback-style=Google -i "$1" >> "$logfile"
+		if [[ $? != 0 ]]; then
+			print "$1 had errors on formatting. Check log file"
+			return 1
+		fi
+
+		java -jar checkstyle.jar --debug -c ./google_checks.xml  "$1" >> "$logfile"
+		if [[ $? != 0 ]]; then
+			print "$1 did not pass CHECKSTYLE configuration. Check log file"
+			return 1
+		fi
+
+	fi
+	print "$1 had no errors"
+
+	return 0
+}
+
+function js_files() # ($file, $enabled) => ()
+{
+	if [[ $2 == 1 ]]; then
+		if [[ "$logfile" != "./target/javascript/js$localtime.log" ]]; then
+			which clang-format >> /dev/null
+			if [[ $? == 1 ]]; then
+				print "ClangFormat and/or ClangTidy are not installed"
+				exit 1
+			fi
+			logfile="./target/javascript"
+
+			if [[ ! -d "$logfile" ]]
+			then
+				mkdir -p "$logfile"
+			fi
+
+			logfile="$logfile"/js"$localtime".log
+
+			if [[ ! -f "$logfile" ]]
+			then
+				touch "$logfile"
+			fi
+		fi
+
+		clang-format --style=file --fallback-style=Google -i "$1" >> "$logfile"
+		if [[ $? != 0 ]]; then
+			print "$1 had errors on formatting. Check log file"
+			return 1
+		fi
+	fi
+	print "$1 had no errors"
+
+	return 0
+}
+
+
+function c_files() # ($file, $enabled, extension) => ()
+{
+	if [[ $2 == 1 ]]; then
+		if [[ "$logfile" != "./target/$3/$3$localtime.log" ]]; then
+			which clang-format >> /dev/null && which clang-tidy >> /dev/null
+			if [[ $? == 1 ]]; then
+				print "ClangFormat and/or ClangTidy are not installed"
+				exit 1
+			fi
+			logfile="./target/$3"
+
+			if [[ ! -d "$logfile" ]]
+			then
+				mkdir -p "$logfile"
+			fi
+
+			logfile="$logfile"/$3"$localtime".log
+
+			if [[ ! -f "$logfile" ]]
+			then
+				touch "$logfile"
+			fi
+		fi
+
+		# Format
+		clang-format --style=file --fallback-style=LLVM -i "$1" >> "$logfile"
+		if [[ $? != 0 ]]; then
+			print "$1 had errors on formatting. Check log file"
+			return 1
+		fi
+
+		# Lint
+		clang-tidy --config-file=.clang-tidy "$1" >> "$logfile" 2>&1
+		if [[ $? != 0 ]]; then
+			print "$1 did not pass CLANG-TIDY configuration. Check log file"
+			return 1
+		fi
+
+	fi
+	print "$1 had no errors"
+
+	return 0
+}
+
+
+function python_files() #($file, $enabled) => ()
+{
+	if [[ $2 == 1 ]]; then
+		if [[ "$logfile" != "./target/python/python$localtime.log" ]]; then
+			which autopep8 >> /dev/null && which pylint >> /dev/null
+			if [[ $? == 1 ]]; then
+				print "Autopep8 and/or PyLint are not installed"
+				exit 1
+			fi
+			## create log file
+			logfile="./target/python"
+
+			if [[ ! -d "$logfile" ]]
+			then
+				mkdir -p "$logfile"
+			fi
+			logfile="$logfile"/python"$localtime".log
+
+			if [[ ! -f "$logfile" ]]
+			then
+				touch "$logfile"
+			fi
+		fi
+
+		### Format
+		autopep8 "$1" >> "$1" 2>> "$logfile"
+		if [[ $? != 0 ]]; then
+			print "$1 had errors on formatting. Check log file"
+			return 1
+		fi
+
+		### Lint
+		pylint "$1" >> $logfile 2>> "$logfile"
+		if [[ $? != 0 ]]; then
+			print "$1 did not pass PyLint configuration. Check log file"
+			return 1
+		fi
+	fi
+	print "$1 had no errors"
+
+	return 0
+}
+
+
+
+function perl_files() # ($file, $enabled) => ()
+{
+	if [[ $2 == 1 ]]; then
+		if [[ "$logfile" != "./target/perl/perl$localtime.log" ]]; then
+			which perlcritic >> /dev/null && which perltidy >> /dev/null
+			if [[ $? == 1 ]]; then
+				print "PerlTidy, PerlCritic and/or PerlImports are not installed"
+				exit 1
+			fi
+			## create log file
+			logfile="./target/perl"
+
+			if [[ ! -d "$logfile" ]]
+			then
+				mkdir -p "$logfile"
+			fi
+			logfile="$logfile"/perl"$localtime".log
+
+			if [[ ! -f "$logfile" ]]
+			then
+				touch "$logfile"
+			fi
+		fi
+
+		syntax_check=$( perl -cw $1 2>&1 )
+
+		echo "" >> "$logfile" && echo "$syntax_check" >> "$logfile"
+
+		if [[ $syntax_check != "$1 syntax OK" ]]; then
+			print "$1 had syntax errors. Check log file"
+			return 1
+		fi
+
+		### Format
+		perltidy "$1" >> "$1.tdy" 2>> "$logfile"
+		if [[ $? != 0 ]]; then
+			print "$1 had errors on formatting. Check log file"
+			return 1
+		fi
+		mv "$1.tdy" "$1"
+
+		### Lint
+		perlcritic "$1" >> $logfile
+		if [[ $? != 0 ]]; then
+			print "$1 did not pass PERLCRITIC configuration. Check log file"
+			return 1
+		fi
+	fi
+	print "$1 had no errors"
+
+	return 0
+}
+
+## If an error was found
+errors=0
+
+localtime=$(date '+%Y%m%d%H%M%S')
+modifiedfiles=($(git diff --cached --name-only --diff-filter=d))
+
+## Add file types, extensions or certain filenames to be ignored during the check
+exceptionfiles=(".perlcriticrc" ".perltidyrc" ".perlimports.toml" "tools/.perlcriticrc" "tools/.perltidyrc" "tools/.perlimports.toml")
+logfile=""
+
+## Move to root folder
+initial_dir=$(pwd)
+while [[ ! -d "$PWD/.git" ]]; do
+	cd ..
+done
+
+### analyce all commited files
+for file in "${modifiedfiles[@]}"; do
+
+	## Get file type
+	file_type=$(file -bi $file)
+
+	## Check if file is skipeable
+	skip_files "$file" "$file_type"
+	if [[ $? != 0 ]]; then
+		continue
+	fi
+
+	print "Checking file $file"
+	case $file_type$file in
+		*.cpp)
+			c_files "$file" "0" "cpp"
+			;;
+		*.c)
+			c_files "$file" "0" "c"
+			;;
+		*.pl|*.pm|*"perl"*)
+			perl_files "$file" "1"
+			;;
+		*.java)
+			java_files "$file" "0"
+			;;
+		*"python"*|*.py)
+			python_files "$file" "0"
+			;;
+		*)
+			print "$file had no errors"
+			continue
+			;;
+	esac
+
+	[[ $? == 1 && $errors == 0 ]] && errors=1 && continue
+
+	## Add to git stash
+	git add "$file"
+done
+
+if [[ $errors == 1 ]]; then
+
+	echo ""
+	echo "#################WARNINGS####################"
+	echo "#       Check log files at ./target/* 	  #"
+	echo "#############################################"
+	echo ""
+
+	exit 1
+fi
+
+## Return to origin folder
+cd "$initial_dir"
+
+exit 0

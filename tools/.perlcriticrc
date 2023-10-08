@@ -1,0 +1,13 @@
+severity  = 3
+
+[-Variables::ProhibitConditionalDeclarations]
+[RegularExpressions::ProhibitComplexRegexes]
+					    # This can be modified, the right way depends on the context
+max_characters = 100
+
+[InputOutput::RequireBriefOpen]
+					    # This can be modified, the right way depends on the context. It should be changed to at least 10 or 5
+lines = 100
+
+[Modules::RequireExplicitPackage]
+exempt_scripts = 0

@@ -1,0 +1,25 @@
+--block-brace-tightness=1
+--brace-tightness=1
+--closing-token-indentation=0
+--continuation-indentation=4
+--entab-leading-whitespace=4
+--indent-columns=4
+--line-up-parentheses
+--maximum-line-length=78
+--no-outdent-long-quotes
+--nospace-for-semicolon
+--opening-brace-on-new-line
+--opening-sub-brace-on-new-line
+--paren-tightness=1
+--square-bracket-tightness=1
+--space-function-paren
+--space-keyword-paren
+--standard-error-output
+--standard-output
+--tabs
+--variable-maximum-line-length
+--vertical-tightness=2
+--want-break-before="% + - * / x != == >= <= =~ !~ < > | & = **= += *= &= <<= &&= -= /= |= >>= ||= //= .= %= ^= x="
+
+
+

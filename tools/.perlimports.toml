@@ -1,0 +1,13 @@
+cache                           = false # setting this to true is currently discouraged
+ignore_modules                  = []
+ignore_modules_filename         = ""
+ignore_modules_pattern          = "" # regex like "^(Foo|Foo::Bar)"
+ignore_modules_pattern_filename = ""
+libs                            = ["lib", "t/lib"]
+log_level                       = "warn"
+never_export_modules            = []
+never_export_modules_filename   = ""
+padding                         = true
+preserve_duplicates             = false
+preserve_unused                 = false
+tidy_whitespace                 = true
