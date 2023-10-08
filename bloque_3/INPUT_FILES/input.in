@@ -1,0 +1,6 @@
+population=100
+generations=10
+neighborhood=0.1
+inferiorLimit=0
+upperLimit=1
+dimensions=30
