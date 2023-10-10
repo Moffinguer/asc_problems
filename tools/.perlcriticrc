@@ -1,13 +1,15 @@
 severity  = 3
 
+# This is a way to write code, it is not confusing
 [-Variables::ProhibitConditionalDeclarations]
+
 [RegularExpressions::ProhibitComplexRegexes]
-					    # This can be modified, the right way depends on the context
-max_characters = 100
+# This can be modified, the right way depends on the context
+max_characters = 620
 
 [InputOutput::RequireBriefOpen]
-					    # This can be modified, the right way depends on the context. It should be changed to at least 10 or 5
-lines = 100
+# This can be modified, the right way depends on the context. It should be changed to at least 10 or 5
+lines = 200
 
 [Modules::RequireExplicitPackage]
 exempt_scripts = 0
