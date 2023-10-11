@@ -3,3 +3,4 @@
 /.perltidyrc
 /.perlimports.toml
 /bloque_3/results/ZDT3/*
+/bloque_3/metrics/*.out
