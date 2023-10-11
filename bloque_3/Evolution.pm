@@ -167,16 +167,21 @@ sub read_input # (filename) -> ( population, generations, neighborhood, inferior
 sub mutate #($x, $window, $upper_limit, $lower_limit, $dimensions, $population)
 {
 	my ( $x, $window, $upper_limit, $lower_limit, $dimensions, $population ) = @_;
-	my ( $CR, $F ) = ( .5, .5 );   #F should be added as a parameter to try things
+	my ( $CR, $F, $PR, $SIG )
+		= ( .5, .5, 1 / $population, 20 )
+		;    #F and SIG should be added as a parameter to try things
 	my $chromosome_mutated;
 	my $info;
 	my $parents = [ $window->[ rand @$window ]->[2],
 					$window->[ rand @$window ]->[2],
 					$window->[ rand @$window ]->[2]
 	];
+	my $sigma = $upper_limit - $lower_limit;
+	$sigma /= $SIG;
 
 	for ( 0 .. $dimensions - 1 )
 	{
+		# Cross
 		if ( rand () <= $CR )
 		{
 			$info
@@ -189,16 +194,18 @@ sub mutate #($x, $window, $upper_limit, $lower_limit, $dimensions, $population)
 		{
 			$info = $x->[$_];
 		}
+
+		# Gauss
+		$info += exp ( -.5 * ( $info / $sigma )**2 ) / ( $sigma * sqrt ( 2 * pi ) )
+			if rand () <= $PR;
+
 		push @$chromosome_mutated, $info;
 	}
 
-## Gauss
-
 	for my $i ( 0 .. scalar @$chromosome_mutated - 1 )
 	{
-		#$chromosome_mutated->[$i] =
 		while (    $chromosome_mutated->[$i] < $lower_limit
-				|| $chromosome_mutated->[$i] > $upper_limit )
+				or $chromosome_mutated->[$i] > $upper_limit )
 		{
 			if ( $chromosome_mutated->[$i] <= $lower_limit )
 			{
