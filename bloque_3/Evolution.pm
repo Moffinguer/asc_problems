@@ -5,6 +5,7 @@ package Evolution;
 use strict;
 use warnings;
 use Data::Dumper;
+use File::Path qw(make_path);
 
 use Math::Trig;
 
@@ -79,14 +80,12 @@ sub zdt3    #(x, n) -> (f1(x), f2(x))
 	my ( $x, $n ) = @_;
 
 	my $f_1 = $x->[0];
-	my ( $g, $h ) = ( 0, 0 );
+	my $g;
 
-	for ( 1 .. $n - 1 )
-	{
-		$g += $x->[$_];
-	}
+	$g += $x->[$_] for ( 1 .. $n - 1 );
+
 	$g = 9 * $g / ( $n - 1 ) + 1;
-	$h = $f_1 / $g;
+	my $h = $f_1 / $g;
 	$h = 1 - sqrt ($h) - $h * sin ( 10 * $f_1 * pi );
 
 	my $f_2 = $g * $h;
@@ -97,9 +96,9 @@ sub zdt3    #(x, n) -> (f1(x), f2(x))
 sub read_input # (filename) -> ( population, generations, neighborhood, inferior_limit, upper_limit, dimensions )
 {
 	my $filename = shift;
-	my ( $population,     $generations, $neighborhood,
-		 $inferior_limit, $upper_limit, $dimensions
-	) = ( 100, 100, 0.25, 0, 1, 30 );
+	my ( $population,  $generations, $neighborhood, $inferior_limit,
+		 $upper_limit, $dimensions,  $experiments
+	) = ( 100, 100, 0.25, 0, 1, 30, 1 );
 
 	$filename = "./INPUT_FILES/$filename.in";
 	unless ( -e $filename )
@@ -117,7 +116,7 @@ sub read_input # (filename) -> ( population, generations, neighborhood, inferior
 	while (<$input>)
 	{
 		unless ( $_
-			=~ /^\s*(population|generations|dimensions|upperLimit|inferiorLimit|neighborhood)\=([+-]?(?:\d*\.\d+|\d+\.\d*|\d+))\s*$/x
+			=~ /^\s*(experiments|population|generations|dimensions|upperLimit|inferiorLimit|neighborhood)\=([+-]?(?:\d*\.\d+|\d+\.\d*|\d+))\s*$/x
 			)
 		{
 			print "\'$_\' bad formatted\n";
@@ -127,6 +126,11 @@ sub read_input # (filename) -> ( population, generations, neighborhood, inferior
 		if ( $1 eq "population" )
 		{
 			$population = 0 + $2;
+			next;
+		}
+		if ( $1 eq "experiments" )
+		{
+			$experiments = 0 + $2;
 			next;
 		}
 		if ( $1 eq "generations" )
@@ -156,8 +160,8 @@ sub read_input # (filename) -> ( population, generations, neighborhood, inferior
 		}
 	}
 	close ($input);
-	return ( $population,     $generations, $neighborhood,
-			 $inferior_limit, $upper_limit, $dimensions );
+	return ( $population,  $generations, $neighborhood, $inferior_limit,
+			 $upper_limit, $dimensions,  $experiments );
 }
 
 sub mutate #($x, $window, $upper_limit, $lower_limit, $dimensions, $population)
@@ -188,7 +192,7 @@ sub mutate #($x, $window, $upper_limit, $lower_limit, $dimensions, $population)
 		push @$chromosome_mutated, $info;
 	}
 
-	## Gauss
+## Gauss
 
 	for my $i ( 0 .. scalar @$chromosome_mutated - 1 )
 	{
@@ -212,8 +216,8 @@ sub mutate #($x, $window, $upper_limit, $lower_limit, $dimensions, $population)
 	return $chromosome_mutated;
 }
 
-my ( $population,     $generations, $neighborhood,
-	 $inferior_limit, $upper_limit, $dimensions
+my ( $population,  $generations, $neighborhood, $inferior_limit,
+	 $upper_limit, $dimensions,  $experiments
 ) = read_input $ARGV[0];
 print "####################################\n";
 print "Variable\tValor\n";
@@ -223,6 +227,7 @@ print "NEIGHBORHOOD\t$neighborhood\n";
 print "INFERIOR_LIMIT\t$inferior_limit\n";
 print "UPPER_LIMIT\t$upper_limit\n";
 print "DIMENSIONS\t$dimensions\n";
+print "EXPERIMENTS\t$experiments\n";
 print "###################################\n";
 
 my ( $lambda_window,       $population_list,
@@ -232,106 +237,159 @@ my ( $lambda_window,       $population_list,
 	 $lambda,              $reproducted_evaluated_functions,
 	 $new_sols,            $time_required,
 	 $f_1t,                $f_2t,
-	 $tchebycheff1,        $tchebycheff2
+	 $tchebycheff1,        $tchebycheff2,
+	 $violations
 );
 
-( $z_1, $z_2 ) = ( undef, undef );
-$times  = ();
-$lambda = window $population;
+my $directory_path = "./results/ZDT3";
+my $output_file;
 
-#print ("Lambdas:\n" . Dumper($lambda) . "\n");
-
-#X[i]
-$population_list
-	= initialization ( $population, $upper_limit, $inferior_limit,
-					   $dimensions );
-
-for my $gen ( 0 .. $generations - 1 )
+for my $exec ( 0 .. $experiments - 1 )
 {
-	print "...................\nGENERATION $gen...\n";
-	$time_required = time;
+	print "...................\nEXECUTION $exec...\n";
 
-	## Initial Evaluation
-	for my $x ( @{$population_list} )
+	unless ( -d $directory_path )
 	{
-		( $f_1, $f_2 ) = zdt3 ( $x, $dimensions );
-		push @{$evaluated_functions}, [ $f_1, $f_2 ];
-	}
-
-	#print ( "Population:\n" . Dumper($population_list) . "\n");
-	#print ( "Functions:\n" . Dumper($evaluated_functions). "\n");
-
-	for my $f_minimum ( @{$evaluated_functions} )
-	{
-		$z_1 = $f_minimum->[0] if not defined $z_1 or $f_minimum->[0] < $z_1;
-		$z_2 = $f_minimum->[1] if not defined $z_2 or $f_minimum->[1] < $z_2;
-	}
-
-	## Guardar soluciones no nominadas (Z?)
-	print "Z=($z_1,$z_2)\n\n";
-
-	# Time to evolve
-	for my $individual ( 0 .. $population - 1 )
-	{
-		## Reproduction
-		#lambda
-		$lambda_window
-			= select_subproblems ( $individual, $neighborhood, $population, $lambda );
-
-		#print ( "Subproblems:\n" . Dumper($lambda_window). "\n");
-
-		$new_sols = mutate $population_list->[$individual], $lambda_window,
-			$upper_limit, $inferior_limit, $dimensions, $population_list;
-
-		#print("Mutated individual:\n" . Dumper( $new_sols ) . "\n");
-
-		##Evaluation
-		( $f_1, $f_2 ) = zdt3 ( $new_sols, $dimensions );
-
-		##Update Best Sol
-		$z_1 = $f_1 if $f_1 < $z_1;
-		$z_2 = $f_2 if $f_2 < $z_2;
-		print "Z_best=($z_1,$z_2)\n\n";
-
-		##Update Neigbours
-		for my $j (@$lambda_window)
+		make_path ($directory_path) or do
 		{
-			( $f_1t, $f_2t ) = zdt3 ( $population_list->[ $j->[2] ], $dimensions );
-			$tchebycheff1 = $j->[0] * abs ( $f_1 - $z_1 );
-			$tchebycheff2 = $j->[0] * abs ( $f_1t - $z_1 );
-			$tchebycheff1 = $j->[1] * abs ( $f_2 - $z_2 )
-				if $tchebycheff1 < $j->[1] * abs ( $f_2 - $z_2 );
-			$tchebycheff2 = $j->[1] * abs ( $f_2t - $z_2 )
-				if $tchebycheff2 < $j->[1] * abs ( $f_2t - $z_2 );
-
-			$population_list->[ $j->[2] ] = $new_sols if $tchebycheff1 <= $tchebycheff2;
-		}
-		## Update EP
+			print "Unable to create $directory_path: $!\n";
+			exit 1;
+		};
+	}
+	$output_file = "./results/ZDT3/$ARGV[0]$exec.out";
+	unless ( -e $output_file )
+	{
+		open ( my $create_file, '>', $output_file ) or do
+		{
+			print "Error opening $output_file: $!";
+			exit 1;
+		};
+		close $create_file;
+	}
+	else
+	{
+		open ( my $clear_file, '>', $output_file ) or do
+		{
+			print "Error cleaning $output_file: $!";
+			exit 1;
+		};
+		close $clear_file;
 	}
 
-	$time_required = time - $time_required;
+	$times  = ();
+	$lambda = window $population;
+	( $z_1, $z_2 ) = ( undef, undef );
 
-	push @{$times}, $time_required;
-	$reproducted_evaluated_functions = ();
+	#print ("Lambdas:\n" . Dumper($lambda) . "\n");
 
-	print "GEN $gen TIME: $time_required";
+	#X[i]
+	$population_list
+		= initialization ( $population, $upper_limit, $inferior_limit,
+						   $dimensions );
 
-	$evaluated_functions             = [];
-	$reproducted_evaluated_functions = [];
-	$z_1                             = undef;
-	$z_2                             = undef;
+	for my $gen ( 0 .. $generations - 1 )
+	{
+		print "...................\nGENERATION $gen...\n";
+		$time_required = time;
+
+		## Initial Evaluation
+		for my $x ( @{$population_list} )
+		{
+			( $f_1, $f_2 ) = zdt3 ( $x, $dimensions );
+			push @{$evaluated_functions}, [ $f_1, $f_2 ];
+		}
+
+		#print ( "Population:\n" . Dumper($population_list) . "\n");
+		#print ( "Functions:\n" . Dumper($evaluated_functions). "\n");
+
+		for my $f_minimum ( @{$evaluated_functions} )
+		{
+			$z_1 = $f_minimum->[0] if not defined $z_1 or $f_minimum->[0] < $z_1;
+			$z_2 = $f_minimum->[1] if not defined $z_2 or $f_minimum->[1] < $z_2;
+		}
+
+		## Guardar soluciones no nominadas (Z?)
+		print "Z=($z_1,$z_2)\n\n";
+
+		# Time to evolve
+		for my $individual ( 0 .. $population - 1 )
+		{
+			## Reproduction
+			#lambda
+			$lambda_window
+				= select_subproblems ( $individual, $neighborhood, $population, $lambda );
+
+			#print ( "Subproblems:\n" . Dumper($lambda_window). "\n");
+
+			$new_sols = mutate $population_list->[$individual], $lambda_window,
+				$upper_limit, $inferior_limit, $dimensions, $population_list;
+
+			#print("Mutated individual:\n" . Dumper( $new_sols ) . "\n");
+
+			# Restrictions violated
+			$violations = 0;
+
+			##Evaluation
+			( $f_1, $f_2 ) = zdt3 ( $new_sols, $dimensions );
+
+			open ( my $file_handle, ">>", $output_file ) or do
+			{
+				print "Error opening $output_file: $!";
+				exit 1;
+			};
+			print $file_handle "$f_1\t$f_2\t$violations\n";
+			close $file_handle;
+
+			##Update Best Sol
+			$z_1 = $f_1 if $f_1 < $z_1;
+			$z_2 = $f_2 if $f_2 < $z_2;
+			print "Z_best=($z_1,$z_2)\n\n";
+
+			##Update Neigbours
+			for my $j (@$lambda_window)
+			{
+				( $f_1t, $f_2t ) = zdt3 ( $population_list->[ $j->[2] ], $dimensions );
+				$tchebycheff1 = $j->[0] * abs ( $f_1 - $z_1 );
+				$tchebycheff2 = $j->[0] * abs ( $f_1t - $z_1 );
+				$tchebycheff1 = $j->[1] * abs ( $f_2 - $z_2 )
+					if $tchebycheff1 < $j->[1] * abs ( $f_2 - $z_2 );
+				$tchebycheff2 = $j->[1] * abs ( $f_2t - $z_2 )
+					if $tchebycheff2 < $j->[1] * abs ( $f_2t - $z_2 );
+
+				$population_list->[ $j->[2] ] = $new_sols if $tchebycheff1 <= $tchebycheff2;
+			}
+			## Update EP
+		}
+
+		$time_required = time - $time_required;
+
+		push @{$times}, $time_required;
+		$reproducted_evaluated_functions = ();
+
+		print "GEN $gen TIME: $time_required\n";
+
+		$evaluated_functions             = [];
+		$reproducted_evaluated_functions = [];
+
+		#$z_1                             = undef;
+		#$z_2                             = undef;
+	}
+
+	my $average_time = 0;
+	$average_time += $_ for (@$times);
+	$average_time /= scalar @$times;
+	print "AVERAGE TIME TO EXECUTE EACH GEN IS $average_time\n";
+
+	(  $lambda_window,       $population_list,
+	   $f_1,                 $f_2,
+	   $evaluated_functions, $z_1,
+	   $z_2,                 $times,
+	   $lambda,              $reproducted_evaluated_functions,
+	   $new_sols,            $time_required
+		)
+		= ( undef, undef, undef, undef, undef, undef, undef, undef,
+			undef, undef, undef, undef, undef, undef );
+
+	( $f_1t, $f_2t ) = ( undef, undef );
 }
-
-(  $lambda_window,       $population_list,
-   $f_1,                 $f_2,
-   $evaluated_functions, $z_1,
-   $z_2,                 $times,
-   $lambda,              $reproducted_evaluated_functions,
-   $new_sols,            $time_required
-	)
-	= ( undef, undef, undef, undef, undef, undef, undef, undef,
-		undef, undef, undef, undef, undef, undef );
-
-( $f_1t, $f_2t ) = ( undef, undef );
-
 1;

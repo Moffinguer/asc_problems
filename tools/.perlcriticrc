@@ -1,7 +1,14 @@
 severity  = 3
 
+#Temporal measure
+[-Subroutines::ProhibitExcessComplexity]
+[-Modules::ProhibitExcessMainComplexity]
+
 # This is a way to write code, it is not confusing
 [-Variables::ProhibitConditionalDeclarations]
+
+# Why should it be prohibited, if a function requires more options add them, or think on an efficient way
+[-Subroutines::ProhibitManyArgs]
 
 [RegularExpressions::ProhibitComplexRegexes]
 # This can be modified, the right way depends on the context
