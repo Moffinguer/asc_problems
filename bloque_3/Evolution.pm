@@ -57,8 +57,9 @@ sub select_subproblems    #( index, vecinity, population, lambda_window )
 	my ( $index, $vecinity, $population, $lambda_window ) = @_;
 
 	my $number_near = int ( $population * $vecinity );
-	print
-		"SELECT $number_near NEIGHBOURS NEAR $index LAMBDA[$lambda_window->[$index]->[0], $lambda_window->[$index]->[1]]\n";
+
+#	print
+#		"SELECT $number_near NEIGHBOURS NEAR $index LAMBDA[$lambda_window->[$index]->[0], $lambda_window->[$index]->[1]]\n";
 
 	my @new_window = sort {
 		euclidean_distance ( $lambda_window->[$index][0], $a->[0],
@@ -253,6 +254,20 @@ my $output_file;
 
 for my $exec ( 0 .. $experiments - 1 )
 {
+	open my $gnuplot, '|-', 'gnuplot -persistent' or do
+	{
+		print "Graphic for exec $exec not created $!";
+		next;
+	};
+	print $gnuplot <<'GNUPLOT_SCRIPT';
+set title "Real time graph"
+set xlabel "f1"
+set ylabel "f2"
+set style data points
+set grid
+plot "-" using 1:2 title "ZDT3" with points pointtype 7 linecolor rgb 'blue'
+GNUPLOT_SCRIPT
+
 	print "...................\nEXECUTION $exec...\n";
 
 	unless ( -d $directory_path )
@@ -268,7 +283,7 @@ for my $exec ( 0 .. $experiments - 1 )
 	{
 		open ( my $create_file, '>', $output_file ) or do
 		{
-			print "Error opening $output_file: $!";
+			print "Error opening $output_file: $!\n";
 			exit 1;
 		};
 		close $create_file;
@@ -277,7 +292,7 @@ for my $exec ( 0 .. $experiments - 1 )
 	{
 		open ( my $clear_file, '>', $output_file ) or do
 		{
-			print "Error cleaning $output_file: $!";
+			print "Error cleaning $output_file: $!\n";
 			exit 1;
 		};
 		close $clear_file;
@@ -316,7 +331,7 @@ for my $exec ( 0 .. $experiments - 1 )
 		}
 
 		## Guardar soluciones no nominadas (Z?)
-		print "Z=($z_1,$z_2)\n\n";
+		#print "Z=($z_1,$z_2)\n\n";
 
 		# Time to evolve
 		for my $individual ( 0 .. $population - 1 )
@@ -341,7 +356,7 @@ for my $exec ( 0 .. $experiments - 1 )
 
 			open ( my $file_handle, ">>", $output_file ) or do
 			{
-				print "Error opening $output_file: $!";
+				print "Error opening $output_file: $!\n";
 				exit 1;
 			};
 			print $file_handle "$f_1\t$f_2\t$violations\n";
@@ -350,7 +365,8 @@ for my $exec ( 0 .. $experiments - 1 )
 			##Update Best Sol
 			$z_1 = $f_1 if $f_1 < $z_1;
 			$z_2 = $f_2 if $f_2 < $z_2;
-			print "Z_best=($z_1,$z_2)\n\n";
+
+			#print "Z_best=($z_1,$z_2)\n\n";
 
 			##Update Neigbours
 			for my $j (@$lambda_window)
@@ -365,6 +381,7 @@ for my $exec ( 0 .. $experiments - 1 )
 
 				$population_list->[ $j->[2] ] = $new_sols if $tchebycheff1 <= $tchebycheff2;
 			}
+			print $gnuplot "$f_1 $f_2\n" if $gen == $generations - 1;
 			## Update EP
 		}
 
@@ -398,5 +415,7 @@ for my $exec ( 0 .. $experiments - 1 )
 			undef, undef, undef, undef, undef, undef );
 
 	( $f_1t, $f_2t ) = ( undef, undef );
+	close $gnuplot;
 }
+
 1;
