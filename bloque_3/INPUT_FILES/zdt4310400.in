@@ -1,0 +1,8 @@
+population=10
+generations=400
+neighborhood=0.25
+inferiorLimit=0
+upperLimit=1
+dimensions=30
+experiments=10
+algorithm=zdt3

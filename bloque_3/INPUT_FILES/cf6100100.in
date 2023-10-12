@@ -1,0 +1,8 @@
+population=100
+generations=100
+neighborhood=0.1
+inferiorLimit=0
+upperLimit=1
+dimensions=16
+experiments=10
+algorithm=cf6
