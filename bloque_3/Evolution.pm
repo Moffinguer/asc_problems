@@ -11,19 +11,37 @@ use Math::Trig;
 
 sub initialization #(population, upper_limit, lower_limit, dimensions) -> (population_list)
 {
-	my ( $n, $upper_limit, $lower_limit, $dimensions ) = @_;
+	my ( $n, $upper_limit, $lower_limit, $dimensions, $algorithm ) = @_;
 	my $population_list = [];
 	my $chromosome      = [];
 	my $alelo           = ();
-	for ( 0 .. $n - 1 )
+	if ( $algorithm eq "zdt3" )
 	{
-		for ( 0 .. $dimensions - 1 )
+		for ( 0 .. $n - 1 )
+		{
+			for ( 0 .. $dimensions - 1 )
+			{
+				$alelo = $lower_limit + rand ($upper_limit);
+				push @{$chromosome}, $alelo;
+			}
+			push @{$population_list}, $chromosome;
+			$chromosome = [];
+		}
+	}
+	else
+	{
+		for ( 0 .. $n - 1 )
 		{
 			$alelo = $lower_limit + rand ($upper_limit);
 			push @{$chromosome}, $alelo;
+			for ( 1 .. $dimensions - 1 )
+			{
+				$alelo = rand (4) - 2;
+				push @{$chromosome}, $alelo;
+			}
+			push @$population_list, $chromosome;
+			$chromosome = [];
 		}
-		push @{$population_list}, $chromosome;
-		$chromosome = [];
 	}
 	print "GENERATED $n INDIVIDUALS WITH $dimensions CHROMOSOMES\n";
 
@@ -94,9 +112,34 @@ sub zdt3    #(x, n) -> (f1(x), f2(x))
 	return ( $f_1, $f_2 );
 }
 
+sub cf6    #(x, n) -> (f1(x), f2(x))
+{
+
+	my ( $x,   $n )   = @_;
+	my ( $f_1, $f_2 ) = ( $x->[0], ( 1 - $x->[0] )**2 );
+
+	for ( 1 .. $n - 1 )
+	{
+		if ( $_ % 2 == 1 )
+		{
+			$f_1
+				+= ( $x->[$_] - .8 * $x->[0] * cos ( 6 * pi * $x->[0] + $_ * pi / $n ) )
+				**2;
+		}
+		else
+		{
+			$f_2
+				+= ( $x->[$_] - .8 * $x->[0] * sin ( 6 * pi * $x->[0] + $_ * pi / $n ) )
+				**2;
+		}
+	}
+	return ( $f_1, $f_2 );
+}
+
 sub problem_function    #(x, n, problem) -> (f1(x), f2(x))
 {
 	my ( $x, $n, $problem ) = @_;
+
 	if ( $problem eq "zdt3" )
 	{
 		return zdt3 ( $x, $n );
@@ -107,68 +150,45 @@ sub problem_function    #(x, n, problem) -> (f1(x), f2(x))
 	}
 }
 
-sub cf6    #(x, n) -> (f1(x), f2(x))
-{
-
-	my ( $x,   $n )   = @_;
-	my ( $f_1, $f_2 ) = ( $x->[0], ( 1 - $x->[0] )**2 );
-
-	for ( 1 .. $n - 1 )
-	{
-		unless ( $_ % 2 )
-		{
-			$f_1
-				+= (
-				   $x->[$_] - .8 * $x->[0] * cos ( 6 * pi * $x->[0] + $_ * pi / ( $n - 1 ) ) )
-				**2;
-		}
-		else
-		{
-			$f_2
-				+= (
-				   $x->[$_] - .8 * $x->[0] * sin ( 6 * pi * $x->[0] + $_ * pi / ( $n - 1 ) ) )
-				**2;
-		}
-	}
-	return ( $f_1, $f_2 );
-}
-
 sub constraint_sigma_evolution    #($gen, $growth_factor) -> ( $sigma )
 {
 	my ( $gen, $growth_factor ) = @_;
-	return 1 / ( 1 + exp ( -*$growth_factor * $gen ) );
+	return 1 / ( 1 + exp ( -$growth_factor * $gen ) );
 
 }
 
-sub constraints # ($problem, $f_1, $f_2, population, generation) -> (f_1_restricted, f_2_restricted)
+sub constraints # ($problem, $sol, population, generation) -> (f_1_restricted, f_2_restricted)
 {
-
-	my ( $problem, $f_1, $f_2, $population, $generation ) = @_;
+	my ( $problem, $sol, $population, $generation ) = @_;
 
 	return ( 0, 0 ) if $problem eq "zdt3";
 
 	my $restriction1
-		= $population->[1]
-		- .8 * $population->[0] *
-		sin ( 6 * pi * $population->[0] + 2 * pi / scalar (@$population) );
+		= $sol->[1]
+		- .8 * $sol->[0] *
+		sin ( 6 * pi * $sol->[0] + 2 * pi / scalar (@$population) );
 	my $restriction2
-		= $population->[3]
-		- .8 * $population->[0] *
-		sin ( 6 * pi * $population->[0] + 4 * pi / scalar (@$population) );
+		= $sol->[3]
+		- .8 * $sol->[0] *
+		sin ( 6 * pi * $sol->[0] + 4 * pi / scalar (@$population) );
 
-	my $sg1 = .5 * ( 1 - $population->[0] ) - ( 1 - $population->[0] )**2;
-	my $sg2 = .25 * sqrt ( 1 - $population->[0] ) - .5 * ( 1 - $population->[0] );
+	my $sg1 = .5 * ( 1 - $sol->[0] ) - ( 1 - $sol->[0] )**2;
+	my $sg2 = .25 * sqrt ( 1 - $sol->[0] ) - .5 * ( 1 - $sol->[0] );
 
-	$restriction1
-		-= $sg1 / abs ($sg1) *
-		sqrt (
-			   abs ( .5 * ( 1 - $population->[0] ) - ( 1 - $population->[0] )**2 ) );
-	$restriction2
-		-= $sg2 / abs ($sg2) *
-		sqrt (
-		abs ( .25 * sqrt ( 1 - $population->[0] ) - .5 * ( 1 - $population->[0] ) ) );
+	if ( $sg1 != 0 )
+	{
+		$restriction1
+			-= $sg1 / abs ($sg1) *
+			sqrt ( abs ( .5 * ( 1 - $sol->[0] ) - ( 1 - $sol->[0] )**2 ) );
+	}
+	if ( $sg2 != 0 )
+	{
+		$restriction2
+			-= $sg2 / abs ($sg2) *
+			sqrt ( abs ( .25 * sqrt ( 1 - $sol->[0] ) - .5 * ( 1 - $sol->[0] ) ) );
+	}
 
-	my ( $f_1_restricted, $f_2_restricted ) = ( $f_1, $f_2 );
+	my ( $f_1_restricted, $f_2_restricted ) = ( 0, 0 );
 	if ( $restriction1 < 0 )
 	{
 		$f_1_restricted
@@ -210,7 +230,7 @@ sub read_input # (filename) -> ( population, generations, neighborhood, inferior
 	while (<$input>)
 	{
 		unless ( $_
-			=~ /^\s*(experiments|population|generations|dimensions|upperLimit|inferiorLimit|neighborhood)\=([+-]?(?:\d*\.\d+|\d+\.\d*|\d+)|zdt3|cf6)\s*$/x
+			=~ /^\s*(algorithm|experiments|population|generations|dimensions|upperLimit|inferiorLimit|neighborhood)\=([+-]?(?:\d*\.\d+|\d+\.\d*|\d+)|zdt3|cf6)\s*$/x
 			)
 		{
 			print "\'$_\' bad formatted\n";
@@ -252,7 +272,6 @@ sub read_input # (filename) -> ( population, generations, neighborhood, inferior
 			$neighborhood = 0 + $2;
 			next;
 		}
-
 		if ( $1 eq "algorithm" )
 		{
 			$algorithm = $2;
@@ -273,9 +292,9 @@ sub mutate #($x, $window, $upper_limit, $lower_limit, $dimensions, $population)
 		;    #F and SIG should be added as a parameter to try things
 	my $chromosome_mutated;
 	my $info;
-	my $parents = [ $window->[ rand @$window ]->[2],
-					$window->[ rand @$window ]->[2],
-					$window->[ rand @$window ]->[2]
+	my $parents = [ $window->[ int rand @$window ]->[2],
+					$window->[ int rand @$window ]->[2],
+					$window->[ int rand @$window ]->[2]
 	];
 	my $sigma = $upper_limit - $lower_limit;
 	$sigma /= $SIG;
@@ -325,8 +344,6 @@ sub mutate #($x, $window, $upper_limit, $lower_limit, $dimensions, $population)
 	}
 	else
 	{
-		my $cf6_lower_limit = -2;
-		my $cf6_upper_limit = 2;
 		while (    $chromosome_mutated->[0] < $lower_limit
 				or $chromosome_mutated->[0] > $upper_limit )
 		{
@@ -341,6 +358,8 @@ sub mutate #($x, $window, $upper_limit, $lower_limit, $dimensions, $population)
 					= $upper_limit - ( $chromosome_mutated->[0] - $upper_limit );
 			}
 		}
+		my $cf6_lower_limit = -2;
+		my $cf6_upper_limit = 2;
 		for my $i ( 1 .. scalar @$chromosome_mutated - 1 )
 		{
 			while (    $chromosome_mutated->[$i] < $cf6_lower_limit
@@ -390,6 +409,7 @@ my ( $lambda_window,       $population_list,
 );
 
 my $directory_path = "./results/ZDT3";
+$directory_path = "./results/CF6" if $algorithm eq "cf6";
 my $output_file;
 
 for my $exec ( 0 .. $experiments - 1 )
@@ -399,7 +419,9 @@ for my $exec ( 0 .. $experiments - 1 )
 		print "Graphic for exec $exec not created $!";
 		next;
 	};
-	print $gnuplot <<'GNUPLOT_SCRIPT';
+	if ( $algorithm eq "zdt3" )
+	{
+		print $gnuplot <<'GNUPLOT_SCRIPT';
 		set title "Real time graph"
 		set xlabel "f1"
 		set ylabel "f2"
@@ -407,6 +429,18 @@ for my $exec ( 0 .. $experiments - 1 )
 		set grid
 		plot "-" using 1:2 title "ZDT3" with points pointtype 7 linecolor rgb 'blue'
 GNUPLOT_SCRIPT
+	}
+	else
+	{
+		print $gnuplot <<'GNUPLOT_SCRIPT';
+		set title "Real time graph"
+		set xlabel "f1"
+		set ylabel "f2"
+		set style data points
+		set grid
+		plot "-" using 1:2 title "CF6" with points pointtype 7 linecolor rgb 'blue'
+GNUPLOT_SCRIPT
+	}
 
 	print "...................\nEXECUTION $exec...\n";
 
@@ -442,12 +476,12 @@ GNUPLOT_SCRIPT
 	$lambda = window $population;
 	( $z_1, $z_2 ) = ( undef, undef );
 
-	#print ("Lambdas:\n" . Dumper($lambda) . "\n");
+	# print ("Lambdas:\n" . Dumper($lambda) . "\n");
 
 	#X[i]
 	$population_list
 		= initialization ( $population, $upper_limit, $inferior_limit,
-						   $dimensions );
+						   $dimensions, $algorithm );
 
 	for my $gen ( 0 .. $generations - 1 )
 	{
@@ -457,10 +491,10 @@ GNUPLOT_SCRIPT
 		## Initial Evaluation
 		for my $x ( @{$population_list} )
 		{
-			( $f_1, $f_2 ) = problem_function ( $x, $dimensions, $algorithm );
-			( $f_1, $f_2 )
-				= constraints ( $algorithm, $f_1, $f_2, $population_list, $gen );
-			push @{$evaluated_functions}, [ $f_1, $f_2 ];
+			( $f_1,          $f_2 ) = problem_function ( $x, $dimensions, $algorithm );
+			( $constraint_1, $constraint_2 )
+				= constraints ( $algorithm, $x, $population_list, $gen );
+			push @{$evaluated_functions}, [ $f_1 + $constraint_1, $f_2 + $constraint_2 ];
 		}
 
 		#print ( "Population:\n" . Dumper($population_list) . "\n");
@@ -473,7 +507,7 @@ GNUPLOT_SCRIPT
 		}
 
 		## Guardar soluciones no nominadas (Z?)
-		#print "Z=($z_1,$z_2)\n\n";
+		# print "Z=($z_1,$z_2)\n\n";
 
 		# Time to evolve
 		for my $individual ( 0 .. $population - 1 )
@@ -483,22 +517,22 @@ GNUPLOT_SCRIPT
 			$lambda_window
 				= select_subproblems ( $individual, $neighborhood, $population, $lambda );
 
-			#print ( "Subproblems:\n" . Dumper($lambda_window). "\n");
+			# print ( "Subproblems:\n" . Dumper($lambda_window). "\n");
 
 			$new_sols = mutate $population_list->[$individual], $lambda_window,
-				$upper_limit, $inferior_limit, $dimensions, $population_list;
+				$upper_limit, $inferior_limit, $dimensions, $population_list, $algorithm;
 
-			#print("Mutated individual:\n" . Dumper( $new_sols ) . "\n");
+			# print("Mutated individual:\n" . Dumper( $new_sols ) . "\n");
 
 			# Restrictions violated
 
 			##Evaluation
 			( $f_1, $f_2 ) = problem_function ( $new_sols, $dimensions, $algorithm );
 			( $constraint_1, $constraint_2 )
-				= constraints ( $algorithm, $f_1, $f_2, $population_list, $gen );
+				= constraints ( $algorithm, $new_sols, $population_list, $gen );
 
-			$violations = $constraint_1 - $f_1 + $constraint_2 - $f_2;
-			( $f_1, $f_2 ) = ( $constraint_1, $constraint_2 );
+			$violations = $constraint_1 + $constraint_2;
+			( $f_1, $f_2 ) = ( $f_1 - $constraint_1, $f_2 - $constraint_2 );
 
 			open ( my $file_handle, ">>", $output_file ) or do
 			{
@@ -515,7 +549,9 @@ GNUPLOT_SCRIPT
 			##Update Neigbours
 			for my $j (@$lambda_window)
 			{
-				( $f_1t, $f_2t ) = zdt3 ( $population_list->[ $j->[2] ], $dimensions );
+				( $f_1t, $f_2t )
+					= problem_function ( $population_list->[ $j->[2] ],
+										 $dimensions, $algorithm );
 				$tchebycheff1 = $j->[0] * abs ( $f_1 - $z_1 );
 				$tchebycheff2 = $j->[0] * abs ( $f_1t - $z_1 );
 				$tchebycheff1 = $j->[1] * abs ( $f_2 - $z_2 )
@@ -528,7 +564,6 @@ GNUPLOT_SCRIPT
 			if ( $gen == $generations - 1 )
 			{
 				print $gnuplot "$f_1 $f_2\n";
-				print "$f_1 $f_2\n";
 
 				#	print "Z_best=($z_1,$z_2)\n\n";
 			}

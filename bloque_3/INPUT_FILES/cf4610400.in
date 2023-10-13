@@ -3,6 +3,6 @@ generations=400
 neighborhood=0.25
 inferiorLimit=0
 upperLimit=1
-dimensions=16
+dimensions=4
 experiments=10
 algorithm=cf6
