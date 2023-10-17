@@ -161,7 +161,7 @@ sub constraints # ($problem, $sol, population, generation) -> (f_1_restricted, f
 {
 	my ( $problem, $sol, $population, $generation ) = @_;
 
-	return ( 0, 0 ) if $problem eq "zdt3";
+	return 0 if $problem eq "zdt3";
 
 	my $restriction1
 		= $sol->[1]
@@ -188,23 +188,19 @@ sub constraints # ($problem, $sol, population, generation) -> (f_1_restricted, f
 			sqrt ( abs ( .25 * sqrt ( 1 - $sol->[0] ) - .5 * ( 1 - $sol->[0] ) ) );
 	}
 
-	my ( $f_1_restricted, $f_2_restricted ) = ( 0, 0 );
+	my $restricted = 0;
 	if ( $restriction1 < 0 )
 	{
-		$f_1_restricted
-			+= constraint_sigma_evolution ( $generation, 0.1 * $generation );
-		$f_2_restricted
-			+= constraint_sigma_evolution ( $generation, 0.1 * $generation );
+		$restricted
+			+= ( $generation + 1 ) * constraint_sigma_evolution ( $generation, 0.1 );
 	}
 	if ( $restriction2 < 0 )
 	{
-		$f_1_restricted
-			+= constraint_sigma_evolution ( $generation, 0.2 * $generation );
-		$f_2_restricted
-			+= constraint_sigma_evolution ( $generation, 0.2 * $generation );
+		$restricted
+			+= ( $generation + 1 ) * constraint_sigma_evolution ( $generation, 0.2 );
 	}
 
-	return ( $restriction1, $restriction2 );
+	return $restricted;
 }
 
 sub read_input # (filename) -> ( population, generations, neighborhood, inferior_limit, upper_limit, dimensions )
@@ -316,8 +312,8 @@ sub mutate #($x, $window, $upper_limit, $lower_limit, $dimensions, $population)
 		}
 
 		# Gauss
-		$info += exp ( -.5 * ( $info / $sigma )**2 ) / ( $sigma * sqrt ( 2 * pi ) )
-			if rand () <= $PR;
+		#	$info += exp ( -.5 * ( $info / $sigma )**2 ) / ( $sigma * sqrt ( 2 * pi ) )
+		#	if rand () <= $PR;
 
 		push @$chromosome_mutated, $info;
 	}
@@ -329,6 +325,7 @@ sub mutate #($x, $window, $upper_limit, $lower_limit, $dimensions, $population)
 			while (    $chromosome_mutated->[$i] < $lower_limit
 					or $chromosome_mutated->[$i] > $upper_limit )
 			{
+				print ( "BEFORE:" . $chromosome_mutated->[$i] . "\n" );
 				if ( $chromosome_mutated->[$i] <= $lower_limit )
 				{
 					$chromosome_mutated->[$i]
@@ -339,6 +336,7 @@ sub mutate #($x, $window, $upper_limit, $lower_limit, $dimensions, $population)
 					$chromosome_mutated->[$i]
 						= $upper_limit - ( $chromosome_mutated->[$i] - $upper_limit );
 				}
+				print ( "AFTER:" . $chromosome_mutated->[$i] . "\n" );
 			}
 		}
 	}
@@ -404,8 +402,7 @@ my ( $lambda_window,       $population_list,
 	 $new_sols,            $time_required,
 	 $f_1t,                $f_2t,
 	 $tchebycheff1,        $tchebycheff2,
-	 $violations,          $constraint_1,
-	 $constraint_2
+	 $violations
 );
 
 my $directory_path = "./results/ZDT3";
@@ -485,26 +482,22 @@ GNUPLOT_SCRIPT
 
 	for my $gen ( 0 .. $generations - 1 )
 	{
+
 		print "...................\nGENERATION $gen...\n";
 		$time_required = time;
 
 		## Initial Evaluation
 		for my $x ( @{$population_list} )
 		{
-			( $f_1,          $f_2 ) = problem_function ( $x, $dimensions, $algorithm );
-			( $constraint_1, $constraint_2 )
-				= constraints ( $algorithm, $x, $population_list, $gen );
-			push @{$evaluated_functions}, [ $f_1 + $constraint_1, $f_2 + $constraint_2 ];
+			( $f_1, $f_2 ) = problem_function ( $x, $dimensions, $algorithm );
+			$violations = constraints ( $algorithm, $x, $population_list, $gen );
+			( $f_1, $f_2 ) = ( $f_1 - $violations, $f_2 - $violations );
+			$z_1 = $f_1 if not defined $z_1 or $f_1 < $z_1;
+			$z_2 = $f_2 if not defined $z_2 or $f_2 < $z_2;
 		}
 
 		#print ( "Population:\n" . Dumper($population_list) . "\n");
 		#print ( "Functions:\n" . Dumper($evaluated_functions). "\n");
-
-		for my $f_minimum ( @{$evaluated_functions} )
-		{
-			$z_1 = $f_minimum->[0] if not defined $z_1 or $f_minimum->[0] < $z_1;
-			$z_2 = $f_minimum->[1] if not defined $z_2 or $f_minimum->[1] < $z_2;
-		}
 
 		## Guardar soluciones no nominadas (Z?)
 		# print "Z=($z_1,$z_2)\n\n";
@@ -514,12 +507,14 @@ GNUPLOT_SCRIPT
 		{
 			## Reproduction
 			#lambda
-			$lambda_window
-				= select_subproblems ( $individual, $neighborhood, $population, $lambda );
+			$lambda_window->{$individual}
+				= select_subproblems ( $individual, $neighborhood, $population, $lambda )
+				if not exists $lambda_window->{$individual};
 
 			# print ( "Subproblems:\n" . Dumper($lambda_window). "\n");
 
-			$new_sols = mutate $population_list->[$individual], $lambda_window,
+			$new_sols = mutate $population_list->[$individual],
+				$lambda_window->{$individual},
 				$upper_limit, $inferior_limit, $dimensions, $population_list, $algorithm;
 
 			# print("Mutated individual:\n" . Dumper( $new_sols ) . "\n");
@@ -528,11 +523,9 @@ GNUPLOT_SCRIPT
 
 			##Evaluation
 			( $f_1, $f_2 ) = problem_function ( $new_sols, $dimensions, $algorithm );
-			( $constraint_1, $constraint_2 )
-				= constraints ( $algorithm, $new_sols, $population_list, $gen );
+			$violations = constraints ( $algorithm, $new_sols, $population_list, $gen );
 
-			$violations = $constraint_1 + $constraint_2;
-			( $f_1, $f_2 ) = ( $f_1 - $constraint_1, $f_2 - $constraint_2 );
+			( $f_1, $f_2 ) = ( $f_1 - $violations, $f_2 - $violations );
 
 			open ( my $file_handle, ">>", $output_file ) or do
 			{
@@ -547,20 +540,33 @@ GNUPLOT_SCRIPT
 			$z_2 = $f_2 if $f_2 < $z_2;
 
 			##Update Neigbours
-			for my $j (@$lambda_window)
+			#	0->[
+			#		A_0,A_1 => $j->[0], $j->[1]
+			#	(0,1        ,0),
+			#	(0.5,0.5    ,1),
+			#	(1,0        ,2)
+			#]
+
+			for my $j ( @{ $lambda_window->{$individual} } )
 			{
+				$tchebycheff1 = $j->[0] * abs ( $f_1 - $z_1 );
+				my $tch11 = $j->[1] * abs ( $f_2 - $z_2 );
+				$tchebycheff1 = $tch11 if $tchebycheff1 < $tch11;
+
 				( $f_1t, $f_2t )
 					= problem_function ( $population_list->[ $j->[2] ],
 										 $dimensions, $algorithm );
-				$tchebycheff1 = $j->[0] * abs ( $f_1 - $z_1 );
-				$tchebycheff2 = $j->[0] * abs ( $f_1t - $z_1 );
-				$tchebycheff1 = $j->[1] * abs ( $f_2 - $z_2 )
-					if $tchebycheff1 < $j->[1] * abs ( $f_2 - $z_2 );
-				$tchebycheff2 = $j->[1] * abs ( $f_2t - $z_2 )
-					if $tchebycheff2 < $j->[1] * abs ( $f_2t - $z_2 );
 
-				$population_list->[ $j->[2] ] = $new_sols if $tchebycheff1 <= $tchebycheff2;
+				$tchebycheff2 = $j->[0] * abs ( $f_1t - $z_1 );
+				my $tch22 = $j->[1] * abs ( $f_2t - $z_2 );
+				$tchebycheff2 = $tch22 if $tchebycheff2 < $tch22;
+
+				next if $tchebycheff1 > $tchebycheff2;
+
+				#print(Dumper($individual,$j). "\n");
+				$population_list->[ $j->[2] ] = $new_sols;
 			}
+			$tchebycheff1 = undef;
 			if ( $gen == $generations - 1 )
 			{
 				print $gnuplot "$f_1 $f_2\n";
@@ -569,6 +575,9 @@ GNUPLOT_SCRIPT
 			}
 			## Update EP
 		}
+
+		#close $gnuplot;
+		#sleep(5);
 
 		$time_required = time - $time_required;
 
@@ -601,6 +610,7 @@ GNUPLOT_SCRIPT
 			undef, undef, undef, undef, undef, undef );
 
 	( $f_1t, $f_2t ) = ( undef, undef );
+
 	close $gnuplot;
 }
 
