@@ -302,7 +302,7 @@ sub mutate #($x, $window, $upper_limit, $lower_limit, $dimensions, $population)
 	for ( 0 .. $dimensions - 1 )
 	{
 		# Cross
-		if ( rand () <= $CR )
+		if ( rand () <= $CR or $_ == int ( rand ( $dimensions - 1 ) ) )
 		{
 			$info
 				= $population->[ $parents->[0] ]->[$_]
