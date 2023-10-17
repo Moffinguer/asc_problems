@@ -1,3 +1,9 @@
+bin/
+lib64
+lib64/
+lib/
+share/
+pyvenv.cfg
 /target/
 /.perlcriticrc
 /.perltidyrc
