@@ -43,7 +43,8 @@ sub initialization #(population, upper_limit, lower_limit, dimensions) -> (popul
 			$chromosome = [];
 		}
 	}
-	print "GENERATED $n INDIVIDUALS WITH $dimensions CHROMOSOMES\n";
+
+	#print "GENERATED $n INDIVIDUALS WITH $dimensions CHROMOSOMES\n";
 
 	return $population_list;
 }
@@ -325,18 +326,16 @@ sub mutate #($x, $window, $upper_limit, $lower_limit, $dimensions, $population)
 			while (    $chromosome_mutated->[$i] < $lower_limit
 					or $chromosome_mutated->[$i] > $upper_limit )
 			{
-				print ( "BEFORE:" . $chromosome_mutated->[$i] . "\n" );
-				if ( $chromosome_mutated->[$i] <= $lower_limit )
+				if ( $chromosome_mutated->[$i] < $lower_limit )
 				{
 					$chromosome_mutated->[$i]
 						= $lower_limit + ( $lower_limit - $chromosome_mutated->[$i] );
 				}
-				if ( $chromosome_mutated->[$i] >= $upper_limit )
+				if ( $chromosome_mutated->[$i] > $upper_limit )
 				{
 					$chromosome_mutated->[$i]
 						= $upper_limit - ( $chromosome_mutated->[$i] - $upper_limit );
 				}
-				print ( "AFTER:" . $chromosome_mutated->[$i] . "\n" );
 			}
 		}
 	}
@@ -345,12 +344,12 @@ sub mutate #($x, $window, $upper_limit, $lower_limit, $dimensions, $population)
 		while (    $chromosome_mutated->[0] < $lower_limit
 				or $chromosome_mutated->[0] > $upper_limit )
 		{
-			if ( $chromosome_mutated->[0] <= $lower_limit )
+			if ( $chromosome_mutated->[0] < $lower_limit )
 			{
 				$chromosome_mutated->[0]
 					= $lower_limit + ( $lower_limit - $chromosome_mutated->[0] );
 			}
-			if ( $chromosome_mutated->[0] >= $upper_limit )
+			if ( $chromosome_mutated->[0] > $upper_limit )
 			{
 				$chromosome_mutated->[0]
 					= $upper_limit - ( $chromosome_mutated->[0] - $upper_limit );
@@ -363,12 +362,12 @@ sub mutate #($x, $window, $upper_limit, $lower_limit, $dimensions, $population)
 			while (    $chromosome_mutated->[$i] < $cf6_lower_limit
 					or $chromosome_mutated->[$i] > $cf6_upper_limit )
 			{
-				if ( $chromosome_mutated->[$i] <= $cf6_lower_limit )
+				if ( $chromosome_mutated->[$i] < $cf6_lower_limit )
 				{
 					$chromosome_mutated->[$i]
 						= $cf6_lower_limit + ( $cf6_lower_limit - $chromosome_mutated->[$i] );
 				}
-				if ( $chromosome_mutated->[$i] >= $cf6_upper_limit )
+				if ( $chromosome_mutated->[$i] > $cf6_upper_limit )
 				{
 					$chromosome_mutated->[$i]
 						= $cf6_upper_limit - ( $chromosome_mutated->[$i] - $cf6_upper_limit );
@@ -473,7 +472,7 @@ GNUPLOT_SCRIPT
 	$lambda = window $population;
 	( $z_1, $z_2 ) = ( undef, undef );
 
-	# print ("Lambdas:\n" . Dumper($lambda) . "\n");
+	print ( "Lambdas:\n" . Dumper ($lambda) . "\n" );
 
 	#X[i]
 	$population_list
@@ -496,11 +495,12 @@ GNUPLOT_SCRIPT
 			$z_2 = $f_2 if not defined $z_2 or $f_2 < $z_2;
 		}
 
-		#print ( "Population:\n" . Dumper($population_list) . "\n");
+		print ( "Population:\n" . Dumper ($population_list) . "\n" );
+
 		#print ( "Functions:\n" . Dumper($evaluated_functions). "\n");
 
 		## Guardar soluciones no nominadas (Z?)
-		# print "Z=($z_1,$z_2)\n\n";
+		print "Z_best=($z_1,$z_2)\n\n";
 
 		# Time to evolve
 		for my $individual ( 0 .. $population - 1 )
@@ -517,7 +517,7 @@ GNUPLOT_SCRIPT
 				$lambda_window->{$individual},
 				$upper_limit, $inferior_limit, $dimensions, $population_list, $algorithm;
 
-			# print("Mutated individual:\n" . Dumper( $new_sols ) . "\n");
+			print ( "Mutated individual $individual:\n" . Dumper ($new_sols) . "\n" );
 
 			# Restrictions violated
 
@@ -526,6 +526,7 @@ GNUPLOT_SCRIPT
 			$violations = constraints ( $algorithm, $new_sols, $population_list, $gen );
 
 			( $f_1, $f_2 ) = ( $f_1 - $violations, $f_2 - $violations );
+			print "F(y_$individual) GEN:$gen =($f_1,$f_2)\n";
 
 			open ( my $file_handle, ">>", $output_file ) or do
 			{
@@ -538,6 +539,7 @@ GNUPLOT_SCRIPT
 			##Update Best Sol
 			$z_1 = $f_1 if $f_1 < $z_1;
 			$z_2 = $f_2 if $f_2 < $z_2;
+			print "Z_best GEN:$gen =($z_1,$z_2)\n";
 
 			##Update Neigbours
 			#	0->[
@@ -565,13 +567,13 @@ GNUPLOT_SCRIPT
 
 				#print(Dumper($individual,$j). "\n");
 				$population_list->[ $j->[2] ] = $new_sols;
+				print ("Actualizado el vecino $j->[2] del individuo $individual");
 			}
 			$tchebycheff1 = undef;
 			if ( $gen == $generations - 1 )
 			{
 				print $gnuplot "$f_1 $f_2\n";
-
-				#	print "Z_best=($z_1,$z_2)\n\n";
+				print ("Ultima generación: $f_1\t$f_2\n");
 			}
 			## Update EP
 		}

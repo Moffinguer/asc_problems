@@ -16,7 +16,7 @@ max_characters = 620
 
 [InputOutput::RequireBriefOpen]
 # This can be modified, the right way depends on the context. It should be changed to at least 10 or 5
-lines = 200
+lines = 1000
 
 [Modules::RequireExplicitPackage]
 exempt_scripts = 0
