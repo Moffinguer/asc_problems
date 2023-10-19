@@ -1,0 +1,33 @@
+unset label
+set label 'Hypervolume' at graph 0.5,0.95 center 
+unset key
+plot './tmp_cf6_16d/hypervola1.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervola2.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervola3.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervola4.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervola5.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervola6.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervola7.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervola8.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervola9.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervola10.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolb1.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolb2.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolb3.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolb4.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolb5.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolb6.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolb7.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolb8.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolb9.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolb10.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolc1.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolc2.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolc3.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolc4.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolc5.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolc6.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolc7.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolc8.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolc9.out' using 1:2 w l,\
+'./tmp_cf6_16d/hypervolc10.out' using 1:2 w l

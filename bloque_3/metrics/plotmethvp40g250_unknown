@@ -1,0 +1,13 @@
+unset label
+set label 'Hypervolume' at graph 0.5,0.95 center 
+unset key
+plot './tmp_zdt3p40g250/hypervolf01.out' using 1:2 w l,\
+'./tmp_zdt3p40g250/hypervolf02.out' using 1:2 w l,\
+'./tmp_zdt3p40g250/hypervolf03.out' using 1:2 w l,\
+'./tmp_zdt3p40g250/hypervolf04.out' using 1:2 w l,\
+'./tmp_zdt3p40g250/hypervolf05.out' using 1:2 w l,\
+'./tmp_zdt3p40g250/hypervolf06.out' using 1:2 w l,\
+'./tmp_zdt3p40g250/hypervolf07.out' using 1:2 w l,\
+'./tmp_zdt3p40g250/hypervolf08.out' using 1:2 w l,\
+'./tmp_zdt3p40g250/hypervolf09.out' using 1:2 w l,\
+'./tmp_zdt3p40g250/hypervolf10.out' using 1:2 w l

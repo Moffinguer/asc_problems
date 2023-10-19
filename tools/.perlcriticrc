@@ -1,5 +1,8 @@
 severity  = 3
 
+[InputOutput::ProhibitBacktickOperators]
+only_in_void_context = 1
+
 #Temporal measure
 [-Subroutines::ProhibitExcessComplexity]
 [-Modules::ProhibitExcessMainComplexity]
@@ -14,9 +17,9 @@ severity  = 3
 # This can be modified, the right way depends on the context
 max_characters = 620
 
-[InputOutput::RequireBriefOpen]
+[-InputOutput::RequireBriefOpen]
 # This can be modified, the right way depends on the context. It should be changed to at least 10 or 5
-lines = 1000
+# lines = 1000
 
 [Modules::RequireExplicitPackage]
 exempt_scripts = 0

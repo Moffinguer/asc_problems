@@ -22,9 +22,13 @@ if [ -f ./tmp_zdt3p100g100/spacing_nsgaii_total.out ]
 then
 	rm ./tmp_zdt3p100g100/spacing_nsgaii_total.out
 fi
-for j in 01 02 03 04 05 06 07 08 09 10
+
+cp -R ../results/ZDT3/ ./UNKNOWN
+cp -R ../results/NSGAII/EVAL10000 ./EVAL10000
+
+for j in 0 1 2 3 4 5 6 7 8 9
 do
-cp ./UNKNOWN/allpop100g100seed$j.out ./UNKNOWN/tmp.out
+cp ./UNKNOWN/zdt3100100$j.out ./UNKNOWN/tmp.out
 #Elimina del fichero todas las lineas excepto las de la ultima generación
 sed -i "1,9900d" ./UNKNOWN/tmp.out
 # Lee la primera columna del fichero de datos, obtiene el máximo y lo almacena en un fichero
@@ -34,6 +38,9 @@ cat ./tmp_zdt3p100g100/hvreff$j_1.out >> ./tmp_zdt3p100g100/hvrefp100g100_1.out
 cat ./UNKNOWN/tmp.out | awk '{print $2;}' | awk '{if(max==""){max=$1}; if($1>max) {max=$1}} END {print max}' > ./tmp_zdt3p100g100/hvreff$j_2.out
 cat ./tmp_zdt3p100g100/hvreff$j_2.out >> ./tmp_zdt3p100g100/hvrefp100g100_2.out
 done
+
+
+
 for j in 01 02 03 04 05 06 07 08 09 099
 do
 cp ./EVAL10000/P100G100/zdt3_all_popmp100g100_seed$j.out ./EVAL10000/P100G100/tmp.out
@@ -52,9 +59,9 @@ cat ./tmp_zdt3p100g100/hvrefp100g100_2.out | awk '{if(max==""){max=$1}; if($1>ma
 
 
 # Ejecutamos metrics sobre cada fichero de datos con un fichero de control creado automáticamente
-for j in 01 02 03 04 05 06 07 08 09 10
+for j in 0 1 2 3 4 5 6 7 8 9
 do
-cp ./UNKNOWN/allpop100g100seed$j.out zdt3_all_popmp100g100.out
+cp ./UNKNOWN/zdt3100100$j.out zdt3_all_popmp100g100.out
 # Copiamos el fichero de control a falta del punto de referencia 
 cp  zdt3p100g100stsinglebasic.in  zdt3p100g100stsingleref.in
 # Añadimos al fichero de control el punto de referencia calculado anteriormente

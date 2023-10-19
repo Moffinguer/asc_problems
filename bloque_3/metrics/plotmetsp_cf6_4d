@@ -1,0 +1,33 @@
+unset label
+set label 'Spacing' at graph 0.5,0.95 center 
+unset key
+plot './tmp_cf6_4d/spacinga1.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacinga2.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacinga3.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacinga4.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacinga5.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacinga6.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacinga7.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacinga8.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacinga9.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacinga10.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingb1.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingb2.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingb3.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingb4.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingb5.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingb6.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingb7.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingb8.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingb9.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingb10.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingc1.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingc2.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingc3.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingc4.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingc5.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingc6.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingc7.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingc8.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingc9.out' using 1:2 w l,\
+'./tmp_cf6_4d/spacingc10.out' using 1:2 w l

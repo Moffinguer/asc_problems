@@ -1,0 +1,6 @@
+for i in 1 2 3 4 5 6 7 8 9 99 
+do
+./nsga2_zdt3 0.$i <zdt3p200g50.in
+mv all_popm.out ./EVAL10000/P200G50/zdt3_all_popmp200g50_seed0$i.out
+mv final_pop.out ./EVAL10000/P200G50/zdt3_final_popp200g50_seed0$i.out
+done
