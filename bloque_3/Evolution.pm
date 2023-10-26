@@ -481,7 +481,7 @@ GNUPLOT_SCRIPT
 	$lambda = window $population;
 	( $z_1, $z_2 ) = ( undef, undef );
 
-	print ( "Lambdas:\n" . Dumper ($lambda) . "\n" );
+	#print ( "Lambdas:\n" . Dumper ($lambda) . "\n" );
 
 	#X[i]
 	$population_list
@@ -490,7 +490,6 @@ GNUPLOT_SCRIPT
 
 	for my $gen ( 0 .. $generations - 1 )
 	{
-
 		print "...................\nGENERATION $gen...\n";
 		$time_required = time;
 
@@ -504,9 +503,9 @@ GNUPLOT_SCRIPT
 			$z_2 = $f_2 if not defined $z_2 or $f_2 < $z_2;
 		}
 
-		print ( "Population:\n" . Dumper ($population_list) . "\n" );
+		#print ( "Population:\n" . Dumper ($population_list) . "\n" );
 
-		#print ( "Functions:\n" . Dumper($evaluated_functions). "\n");
+		print ( "Functions:\n" . Dumper($evaluated_functions). "\n");
 
 		## Guardar soluciones no nominadas (Z?)
 		print "Z_best=($z_1,$z_2)\n\n";
@@ -574,16 +573,15 @@ GNUPLOT_SCRIPT
 
 				next if $tchebycheff1 > $tchebycheff2;
 
-				#print(Dumper($individual,$j). "\n");
+				print(Dumper($individual,$j). "\n");
 				$population_list->[ $j->[2] ] = $new_sols;
 				print ("Actualizado el vecino $j->[2] del individuo $individual");
-				last;
 			}
 			$tchebycheff1 = undef;
 			if ( $gen == $generations - 1 )
 			{
 				print $gnuplot "$f_1 $f_2\n";
-				print ("Ultima generación: $f_1\t$f_2\n");
+				#print ("Ultima generación: $f_1\t$f_2\n");
 			}
 			## Update EP
 		}
