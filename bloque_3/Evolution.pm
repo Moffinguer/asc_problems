@@ -487,6 +487,16 @@ GNUPLOT_SCRIPT
 	$population_list
 		= initialization ( $population, $upper_limit, $inferior_limit,
 						   $dimensions, $algorithm );
+					   for my $x ( @{$population_list} )
+					   {
+						   print("Individuo:". Dumper($x));
+						   ( $f_1, $f_2 ) = problem_function ( $x, $dimensions, $algorithm );
+						   $violations = constraints ( $algorithm, $x, $population_list, 0 );
+						   ( $f_1, $f_2 ) = ( $f_1 - $violations, $f_2 - $violations );
+						   $z_1 = $f_1 if not defined $z_1 or $f_1 < $z_1;
+						   $z_2 = $f_2 if not defined $z_2 or $f_2 < $z_2;
+						   print("\nF(x) iniciales = ($f_1, $f_2)\nZ_best=($z_1, $z_2)\n");
+					   }
 
 	for my $gen ( 0 .. $generations - 1 )
 	{
@@ -514,6 +524,7 @@ GNUPLOT_SCRIPT
 		for my $individual ( 0 .. $population - 1 )
 		{
 			## Reproduction
+			print("Individuo a evaluar es:". Dumper($population_list->[$individual])."\n");
 			#lambda
 			$lambda_window->{$individual}
 				= select_subproblems ( $individual, $neighborhood, $population, $lambda )
